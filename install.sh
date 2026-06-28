@@ -167,6 +167,24 @@ else
 fi
 
 #############################################
+# Deploy Cloud Function
+#############################################
+
+echo -e "${GREEN}Deploying Cloud Function...${NC}"
+
+gcloud functions deploy $FUNCTION \
+--gen2 \
+--runtime=python312 \
+--region=$REGION \
+--source=. \
+--entry-point=stop_billing \
+--trigger-http \
+--service-account=$FUNCTION_SA@$PROJECT_ID.iam.gserviceaccount.com \
+--set-env-vars=PROJECT_ID=$PROJECT_ID \
+--max-instances=1 \
+--no-allow-unauthenticated
+
+#############################################
 # Finished
 #############################################
 
