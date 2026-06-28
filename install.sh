@@ -272,8 +272,7 @@ else
     gcloud beta billing budgets create \
         --billing-account="$BILLING_ACCOUNT" \
         --display-name="$BUDGET_NAME" \
-        --budget-amount="${BUDGET}USD" \
-        --filter-projects="projects/$PROJECT_ID" \
+        --budget-amount="$BUDGET" \
         --threshold-rule=percent=1.0 \
         --all-updates-rule-pubsub-topic="projects/$PROJECT_ID/topics/$TOPIC" \
         --disable-default-iam-recipients
