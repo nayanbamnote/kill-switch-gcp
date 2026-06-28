@@ -251,47 +251,34 @@ else
 fi
 
 #############################################
-# Create Billing Budget
+# Create / Update Billing Budget
 #############################################
 
-echo -e "${GREEN}Creating Billing Budget...${NC}"
+echo -e "${GREEN}Configuring Billing Budget...${NC}"
 
-TOPIC_RESOURCE="projects/$PROJECT_ID/topics/$TOPIC"
+BUDGET_NAME="Billing Kill Switch Budget"
 
-cat > budget.json <<EOF
-{
-  "displayName": "Billing Kill Switch Budget",
-  "budgetFilter": {
-    "projects": [
-      "projects/$PROJECT_NUMBER"
-    ]
-  },
-  "amount": {
-    "specifiedAmount": {
-      "currencyCode": "USD",
-      "units": "$BUDGET"
-    }
-  },
-  "thresholdRules": [
-    {
-      "thresholdPercent": 1.0
-    }
-  ],
-  "notificationsRule": {
-    "pubsubTopic": "$TOPIC_RESOURCE",
-    "schemaVersion": "1.0"
-  }
-}
-EOF
+if gcloud beta billing budgets list \
+    --billing-account="$BILLING_ACCOUNT" \
+    --format="value(displayName)" | grep -Fxq "$BUDGET_NAME"
+then
 
-ACCESS_TOKEN=$(gcloud auth print-access-token)
+    echo "Billing budget already exists. Skipping."
 
-curl -s \
--X POST \
--H "Authorization: Bearer $ACCESS_TOKEN" \
--H "Content-Type: application/json" \
-https://billingbudgets.googleapis.com/v1/billingAccounts/$BILLING_ACCOUNT/budgets \
--d @budget.json
+else
+
+    echo "Creating billing budget..."
+
+    gcloud beta billing budgets create \
+        --billing-account="$BILLING_ACCOUNT" \
+        --display-name="$BUDGET_NAME" \
+        --budget-amount="${BUDGET}USD" \
+        --filter-projects="projects/$PROJECT_ID" \
+        --threshold-rule=percent=1.0 \
+        --all-updates-rule-pubsub-topic="projects/$PROJECT_ID/topics/$TOPIC" \
+        --disable-default-iam-recipients
+
+fi
 
 #############################################
 # Finished
