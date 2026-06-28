@@ -92,6 +92,8 @@ TOPIC="budget-alert-topic"
 
 FUNCTION="billing-kill-switch-func"
 
+SUBSCRIPTION="billing-kill-switch-sub"
+
 #############################################
 # Create Service Accounts
 #############################################
@@ -195,6 +197,50 @@ gcloud functions deploy $FUNCTION \
 --set-env-vars=PROJECT_ID=$PROJECT_ID \
 --max-instances=1 \
 --no-allow-unauthenticated
+
+#############################################
+# Get Function URL
+#############################################
+
+echo -e "${GREEN}Getting Function URL...${NC}"
+
+FUNCTION_URL=$(gcloud functions describe "$FUNCTION" \
+--gen2 \
+--region="$REGION" \
+--format="value(serviceConfig.uri)")
+
+echo "Function URL: $FUNCTION_URL"
+
+#############################################
+# Grant Cloud Run Invoker
+#############################################
+
+echo -e "${GREEN}Granting Cloud Run Invoker permission...${NC}"
+
+gcloud run services add-iam-policy-binding "$FUNCTION" \
+--region="$REGION" \
+--member="serviceAccount:$INVOKER_SA@$PROJECT_ID.iam.gserviceaccount.com" \
+--role="roles/run.invoker"
+
+#############################################
+# Create Pub/Sub Push Subscription
+#############################################
+
+echo -e "${GREEN}Creating Pub/Sub Push Subscription...${NC}"
+
+if ! gcloud pubsub subscriptions describe "$SUBSCRIPTION" >/dev/null 2>&1
+then
+
+gcloud pubsub subscriptions create "$SUBSCRIPTION" \
+--topic="$TOPIC" \
+--push-endpoint="$FUNCTION_URL" \
+--push-auth-service-account="$INVOKER_SA@$PROJECT_ID.iam.gserviceaccount.com"
+
+else
+
+echo "Pub/Sub subscription already exists."
+
+fi
 
 #############################################
 # Finished
