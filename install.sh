@@ -205,9 +205,9 @@ gcloud functions deploy $FUNCTION \
 echo -e "${GREEN}Getting Function URL...${NC}"
 
 FUNCTION_URL=$(gcloud functions describe "$FUNCTION" \
---gen2 \
---region="$REGION" \
---format="value(serviceConfig.uri)")
+  --gen2 \
+  --region="$REGION" \
+  --format="value(url)")
 
 echo "Function URL: $FUNCTION_URL"
 
