@@ -13,6 +13,25 @@ YELLOW='\033[1;33m'
 NC='\033[0m'
 
 #############################################
+# Helper Functions
+#############################################
+
+wait_for_service_account() {
+
+    local EMAIL="$1"
+
+    echo "Waiting for $EMAIL..."
+
+    until gcloud iam service-accounts describe "$EMAIL" >/dev/null 2>&1
+    do
+        sleep 2
+    done
+
+    echo "✓ $EMAIL is ready."
+
+}
+
+#############################################
 # Banner
 #############################################
 
@@ -100,6 +119,16 @@ gcloud iam service-accounts create $INVOKER_SA \
 fi
 
 #############################################
+# Wait for IAM propagation
+#############################################
+
+wait_for_service_account \
+"$FUNCTION_SA@$PROJECT_ID.iam.gserviceaccount.com"
+
+wait_for_service_account \
+"$INVOKER_SA@$PROJECT_ID.iam.gserviceaccount.com"
+
+#############################################
 # IAM Roles
 #############################################
 
@@ -130,8 +159,12 @@ $BILLING_ACCOUNT \
 
 echo -e "${GREEN}Creating Pub/Sub Topic...${NC}"
 
-gcloud pubsub topics create $TOPIC \
---quiet || true
+if ! gcloud pubsub topics describe "$TOPIC" >/dev/null 2>&1
+then
+    gcloud pubsub topics create "$TOPIC"
+else
+    echo "Pub/Sub topic already exists."
+fi
 
 #############################################
 # Finished
