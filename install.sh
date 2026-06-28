@@ -167,6 +167,18 @@ else
 fi
 
 #############################################
+# Grant Cloud Build Builder Role
+#############################################
+
+echo -e "${GREEN}Granting Cloud Build Builder role...${NC}"
+
+BUILD_SA="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+
+gcloud projects add-iam-policy-binding "$PROJECT_ID" \
+--member="serviceAccount:$BUILD_SA" \
+--role="roles/cloudbuild.builds.builder"
+
+#############################################
 # Deploy Cloud Function
 #############################################
 
@@ -192,7 +204,7 @@ echo
 
 echo -e "${GREEN}"
 echo "======================================"
-echo "Phase 1 Complete"
+echo "Phase 2 Complete"
 echo "======================================"
 
 echo "Project : $PROJECT_ID"
