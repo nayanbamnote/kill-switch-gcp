@@ -235,12 +235,56 @@ gcloud pubsub subscriptions create "$SUBSCRIPTION" \
 --topic="$TOPIC" \
 --push-endpoint="$FUNCTION_URL" \
 --push-auth-service-account="$INVOKER_SA@$PROJECT_ID.iam.gserviceaccount.com"
+--expiration-period=never
 
 else
 
 echo "Pub/Sub subscription already exists."
 
 fi
+
+#############################################
+# Create Billing Budget
+#############################################
+
+echo -e "${GREEN}Creating Billing Budget...${NC}"
+
+TOPIC_RESOURCE="projects/$PROJECT_ID/topics/$TOPIC"
+
+cat > budget.json <<EOF
+{
+  "displayName": "Billing Kill Switch Budget",
+  "budgetFilter": {
+    "projects": [
+      "projects/$PROJECT_NUMBER"
+    ]
+  },
+  "amount": {
+    "specifiedAmount": {
+      "currencyCode": "USD",
+      "units": "$BUDGET"
+    }
+  },
+  "thresholdRules": [
+    {
+      "thresholdPercent": 1.0
+    }
+  ],
+  "notificationsRule": {
+    "pubsubTopic": "$TOPIC_RESOURCE",
+    "schemaVersion": "1.0"
+  }
+}
+EOF
+
+ACCESS_TOKEN=$(gcloud auth print-access-token)
+
+curl -s \
+-X POST \
+-H "Authorization: Bearer $ACCESS_TOKEN" \
+-H "Content-Type: application/json" \
+https://billingbudgets.googleapis.com/v1/billingAccounts/$BILLING_ACCOUNT/budgets \
+-d @budget.json
 
 #############################################
 # Finished
@@ -250,7 +294,7 @@ echo
 
 echo -e "${GREEN}"
 echo "======================================"
-echo "Phase 2 Complete"
+echo "Installation Complete"
 echo "======================================"
 
 echo "Project : $PROJECT_ID"
