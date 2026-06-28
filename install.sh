@@ -273,8 +273,10 @@ else
         --billing-account="$BILLING_ACCOUNT" \
         --display-name="$BUDGET_NAME" \
         --budget-amount="$BUDGET" \
+        --calendar-period=year \
+        --credit-types-treatment=exclude-all-credits \
         --threshold-rule=percent=1.0 \
-        --all-updates-rule-pubsub-topic="projects/$PROJECT_ID/topics/$TOPIC" \
+        --all-updates-rule-pubsub-topic="projects/$PROJECT_ID/topics/$TOPIC"
 
 fi
 
