@@ -275,7 +275,6 @@ else
         --budget-amount="$BUDGET" \
         --threshold-rule=percent=1.0 \
         --all-updates-rule-pubsub-topic="projects/$PROJECT_ID/topics/$TOPIC" \
-        --disable-default-iam-recipients
 
 fi
 
