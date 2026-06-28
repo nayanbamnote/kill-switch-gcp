@@ -223,23 +223,30 @@ gcloud run services add-iam-policy-binding "$FUNCTION" \
 --role="roles/run.invoker"
 
 #############################################
-# Create Pub/Sub Push Subscription
+# Create / Update Pub/Sub Push Subscription
 #############################################
 
-echo -e "${GREEN}Creating Pub/Sub Push Subscription...${NC}"
+echo -e "${GREEN}Configuring Pub/Sub Push Subscription...${NC}"
 
-if ! gcloud pubsub subscriptions describe "$SUBSCRIPTION" >/dev/null 2>&1
+if gcloud pubsub subscriptions describe "$SUBSCRIPTION" >/dev/null 2>&1
 then
 
-gcloud pubsub subscriptions create "$SUBSCRIPTION" \
---topic="$TOPIC" \
---push-endpoint="$FUNCTION_URL" \
---push-auth-service-account="$INVOKER_SA@$PROJECT_ID.iam.gserviceaccount.com"
---expiration-period=never
+    echo "Subscription already exists. Updating..."
+
+    gcloud pubsub subscriptions update "$SUBSCRIPTION" \
+        --push-endpoint="$FUNCTION_URL" \
+        --push-auth-service-account="$INVOKER_SA@$PROJECT_ID.iam.gserviceaccount.com" \
+        --expiration-period=never
 
 else
 
-echo "Pub/Sub subscription already exists."
+    echo "Creating subscription..."
+
+    gcloud pubsub subscriptions create "$SUBSCRIPTION" \
+        --topic="$TOPIC" \
+        --push-endpoint="$FUNCTION_URL" \
+        --push-auth-service-account="$INVOKER_SA@$PROJECT_ID.iam.gserviceaccount.com" \
+        --expiration-period=never
 
 fi
 
